@@ -1,0 +1,38 @@
+{
+    "manifest_version": 3,
+    "name": "Deepseek Enhancer",
+    "version": "0.1.0",
+    "description": "This extension enhances the functionality of deepseek.",
+
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "deepseek-enhancer@lunatic.com",
+            "strict_min_version": "115.0"
+        }
+    },
+
+    "icons": {
+        "48": "icons/icon.png",
+        "96": "icons/icon.png"
+    },
+
+    "action": {
+        "default_title": "Deepseek Enhancer",
+        "default_popup": "popup.html",
+        "default_icon": {
+            "48": "icons/icon.png"
+        }
+    },
+
+    "permissions": ["storage"],
+
+    "host_permissions": ["https://chat.deepseek.com/*"],
+
+    "content_scripts": [
+        {
+            "matches": ["https://chat.deepseek.com/*"],
+            "js": ["content.js"],
+            "run_at": "document_idle"
+        }
+    ]
+}
