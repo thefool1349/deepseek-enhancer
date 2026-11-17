@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const toggle = document.getElementById("hide-thought-toggle");
     browser.storage.local.get("hide_thoughts").then((result) => {
         if (result.hide_thoughts !== undefined)
-            toggle.checked = result.hide_thoughts;
+            toggle.checked = result.hide_thoughts === true;
     });
     toggle.addEventListener("change", () => {
         browser.storage.local.set({ hide_thoughts: toggle.checked });
@@ -43,50 +43,80 @@ document.addEventListener("DOMContentLoaded", () => {
     let customInstructions = [];
     let editingId = null;
 
+    function isValidInstruction(item) {
+        return (
+            item !== null &&
+            typeof item === "object" &&
+            typeof item.title === "string" &&
+            typeof item.text === "string"
+        );
+    }
+
+    function createActionButton(className, label, handler) {
+        const button = document.createElement("button");
+        button.className = className;
+        button.textContent = label;
+        button.addEventListener("click", handler);
+        return button;
+    }
+
     function renderList() {
-        instructionList.innerHTML = "";
+        instructionList.replaceChildren();
 
         if (customInstructions.length === 0) {
-            instructionList.innerHTML =
-                '<li style="color: #9ca3af; font-size: 12px; justify-content: center; border: none; background: transparent;">No custom instructions yet.</li>';
+            const emptyItem = document.createElement("li");
+            emptyItem.textContent = "No custom instructions yet.";
+            emptyItem.style.cssText =
+                "color: #9ca3af; font-size: 12px; justify-content: center; border: none; background: transparent;";
+            instructionList.appendChild(emptyItem);
             return;
         }
 
         customInstructions.forEach((item) => {
             const li = document.createElement("li");
-            const isStarred = item.isDefault ? "is-default" : "";
-            const starIcon = item.isDefault ? "&#9733;" : "&#9734;";
 
-            li.innerHTML = `
-                <div style="display: flex; flex-direction: column; gap: 4px; text-align: left; overflow: hidden;">
-                    <span style="color: #93c5fd; font-weight: bold; font-size: 14px;">${item.title}</span>
-                    <span style="font-size: 11px; color: #d4d4d8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;">${item.text}</span>
-                </div>
-                <div class="action-buttons">
-                    <button class="btn-star ${isStarred}" data-id="${item.id}" title="Set as Default">${starIcon}</button>
-                    <button class="btn-edit" data-id="${item.id}">Edit</button>
-                    <button class="btn-delete" data-id="${item.id}">&times;</button>
-                </div>
-            `;
+            const info = document.createElement("div");
+            info.style.cssText =
+                "display: flex; flex-direction: column; gap: 4px; text-align: left; overflow: hidden;";
+
+            const title = document.createElement("span");
+            title.style.cssText =
+                "color: #93c5fd; font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;";
+            title.textContent = item.title;
+
+            const text = document.createElement("span");
+            text.style.cssText =
+                "font-size: 11px; color: #d4d4d8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;";
+            text.textContent = item.text;
+
+            info.appendChild(title);
+            info.appendChild(text);
+
+            const actions = document.createElement("div");
+            actions.className = "action-buttons";
+
+            const star = createActionButton(
+                item.isDefault ? "btn-star is-default" : "btn-star",
+                item.isDefault ? "\u2605" : "\u2606",
+                () => toggleDefault(item.id),
+            );
+            star.title = "Set as Default";
+
+            const edit = createActionButton("btn-edit", "Edit", () =>
+                startEditing(item.id),
+            );
+
+            const remove = createActionButton("btn-delete", "\u00d7", () =>
+                deleteInstruction(item.id),
+            );
+
+            actions.appendChild(star);
+            actions.appendChild(edit);
+            actions.appendChild(remove);
+
+            li.appendChild(info);
+            li.appendChild(actions);
             instructionList.appendChild(li);
-        });
-
-        document.querySelectorAll(".btn-star").forEach((btn) => {
-            btn.addEventListener("click", (e) =>
-                toggleDefault(parseInt(e.target.getAttribute("data-id"))),
-            );
-        });
-
-        document.querySelectorAll(".btn-edit").forEach((btn) => {
-            btn.addEventListener("click", (e) =>
-                startEditing(parseInt(e.target.getAttribute("data-id"))),
-            );
-        });
-
-        document.querySelectorAll(".btn-delete").forEach((btn) => {
-            btn.addEventListener("click", (e) =>
-                deleteInstruction(parseInt(e.target.getAttribute("data-id"))),
-            );
         });
     }
 
@@ -135,7 +165,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 (item) => item.id === editingId,
             );
             if (index !== -1) {
-                const wasDefault = customInstructions[index].isDefault;
+                const wasDefault = customInstructions[index].isDefault === true;
                 customInstructions[index] = {
                     id: editingId,
                     title,
@@ -144,8 +174,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 };
             }
         } else {
+            let newId = Date.now();
+            while (customInstructions.some((item) => item.id === newId)) {
+                newId += 1;
+            }
             customInstructions.push({
-                id: Date.now(),
+                id: newId,
                 title: title,
                 text: instruction,
                 isDefault: false,
@@ -206,12 +240,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     browser.storage.local.get("custom_instructions").then((result) => {
-        if (
-            result.custom_instructions &&
-            Array.isArray(result.custom_instructions)
-        ) {
-            customInstructions = result.custom_instructions;
-            renderList();
+        if (Array.isArray(result.custom_instructions)) {
+            customInstructions =
+                result.custom_instructions.filter(isValidInstruction);
         }
+        renderList();
     });
 });
