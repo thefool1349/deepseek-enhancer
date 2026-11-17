@@ -293,3 +293,17 @@ textarea.instruction-input {
 .btn-modal-ok:hover {
     background-color: #2563eb;
 }
+
+/* Documentation Link */
+.doc-link {
+    color: #9ca3af;
+    font-size: 12px;
+    text-decoration: none;
+    transition: color 0.2s;
+    font-weight: 500;
+}
+
+.doc-link:hover {
+    color: #3b82f6;
+    text-decoration: underline;
+}

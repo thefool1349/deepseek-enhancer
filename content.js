@@ -141,28 +141,33 @@ function renderChips() {
     if (defaultInstruction) {
         const lockedChip = document.createElement("div");
         lockedChip.className = "ds-enhancer-chip locked";
-        lockedChip.innerHTML = `<span>🔒 ${defaultInstruction.title}</span>`;
+        const lockedSpan = document.createElement("span");
+        lockedSpan.textContent = `🔒 ${defaultInstruction.title}`;
+        lockedChip.appendChild(lockedSpan);
         chipBar.appendChild(lockedChip);
     }
 
     activeInstructions.forEach((instruction) => {
         const chip = document.createElement("div");
         chip.className = "ds-enhancer-chip";
-        chip.innerHTML = `
-            <span>${instruction.title}</span>
-            <div class="ds-enhancer-chip-close" data-id="${instruction.id}">×</div>
-        `;
 
-        chip.querySelector(".ds-enhancer-chip-close").addEventListener(
-            "click",
-            () => {
-                activeInstructions = activeInstructions.filter(
-                    (item) => item.id !== instruction.id,
-                );
-                renderChips();
-            },
-        );
+        const titleSpan = document.createElement("span");
+        titleSpan.textContent = instruction.title;
 
+        const closeDiv = document.createElement("div");
+        closeDiv.className = "ds-enhancer-chip-close";
+        closeDiv.dataset.id = instruction.id;
+        closeDiv.textContent = "×";
+
+        closeDiv.addEventListener("click", () => {
+            activeInstructions = activeInstructions.filter(
+                (item) => item.id !== instruction.id,
+            );
+            renderChips();
+        });
+
+        chip.appendChild(titleSpan);
+        chip.appendChild(closeDiv);
         chipBar.appendChild(chip);
     });
 
@@ -275,10 +280,18 @@ function renderMenu(textarea, instructions) {
     instructions.forEach((item, index) => {
         const div = document.createElement("div");
         div.className = `ds-menu-item ${index === selectedIndex ? "selected" : ""}`;
-        div.innerHTML = `
-            <div class="ds-menu-title">${item.title}</div>
-            <div class="ds-menu-desc">${item.text}</div>
-        `;
+
+        const titleDiv = document.createElement("div");
+        titleDiv.className = "ds-menu-title";
+        titleDiv.textContent = item.title;
+
+        const descDiv = document.createElement("div");
+        descDiv.className = "ds-menu-desc";
+        descDiv.textContent = item.text;
+
+        div.appendChild(titleDiv);
+        div.appendChild(descDiv);
+
         div.addEventListener("click", () => selectInstruction(textarea, item));
         menuElement.appendChild(div);
     });
